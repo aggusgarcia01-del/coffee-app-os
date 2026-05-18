@@ -18,7 +18,7 @@ def generar_ticket(
     items:         list,
     subtotal:      float,
     total:         float,
-    nombre_local:  str  = "Coffee App OS",
+    nombre_local:  str  = "",
     direccion:     str  = "",
     telefono:      str  = "",
     notas:         str  = "",
@@ -90,17 +90,14 @@ def generar_ticket(
     # ===========================================================
     # ENCABEZADO (CON LOGO AUTOMÁTICO)
     # ===========================================================
-   # ===========================================================
-    # ENCABEZADO (CON LOGO AUTOMÁTICO)
-    # ===========================================================
-    _espacio(1)
+
 
     # Buscar la imagen del logo en la misma carpeta del script
     ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png.png")
     
     if os.path.exists(ruta_logo):
         # Si lo encuentra, lo imprime
-        ancho_logo = 44 if ancho_mm == 80 else 32
+        ancho_logo = 30 if ancho_mm == 80 else 15
         pos_x = (ancho_mm - ancho_logo) / 2
         pdf.image(ruta_logo, x=pos_x, y=pdf.get_y(), w=ancho_logo)
         _espacio(ancho_logo * 1)
@@ -188,7 +185,7 @@ def generar_ticket(
     _espacio(2)
     _sep('=')
     _espacio(1)
-    _linea_full("Gracias por su visita!", size=10, bold=True)
+    _linea_full("Gracias por tu visita!", size=10, bold=True)
     _linea_full("Vuelva pronto  :)", size=9)
     _espacio(3)
 
