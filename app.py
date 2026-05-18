@@ -1,12 +1,27 @@
-import os
-import time
+import datetime as dt
+from datetime import timezone, timedelta
 
-# Forzar zona horaria de Argentina
-os.environ['TZ'] = 'America/Argentina/Buenos_Aires'
-try:
-    time.tzset()
-except AttributeError:
-    pass
+# 1. Guardamos el reloj original en una caja fuerte para evitar el bucle infinito
+_reloj_original = dt.datetime
+_fecha_original = dt.date
+
+# 2. Creamos nuestro reloj modificado que consulta al original de forma segura
+class DatetimeArgentina(_reloj_original):
+    @classmethod
+    def now(cls, tz=None):
+        if tz is None:
+            # Pide la hora al reloj original en UTC-3
+            return _reloj_original.now(timezone(timedelta(hours=-3))).replace(tzinfo=None)
+        return _reloj_original.now(tz)
+
+class DateArgentina(_fecha_original):
+    @classmethod
+    def today(cls):
+        return _reloj_original.now(timezone(timedelta(hours=-3))).date()
+
+# 3. Instalamos el parche seguro
+dt.datetime = DatetimeArgentina
+dt.date = DateArgentina
 # =============================================================
 # app.py — punto café OS
 # Diseño fiel al mockup: panel izquierdo + derecho, barra stock
