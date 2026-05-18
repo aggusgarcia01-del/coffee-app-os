@@ -96,7 +96,7 @@ def generar_ticket(
     _espacio(2)
 
     # Buscar la imagen del logo en la misma carpeta del script
-    ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+    ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png.png")
     
     if os.path.exists(ruta_logo):
         # Si lo encuentra, lo imprime
