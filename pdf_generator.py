@@ -1,6 +1,6 @@
 # =============================================================
 # pdf_generator.py — Generación de tickets PDF para impresora
-# térmica (formato 58 mm y 80 mm)
+# térmica (formato 58 mm y 80 mm) con soporte de Logo
 # Librería: fpdf2  →  pip install fpdf2
 # =============================================================
 
@@ -25,22 +25,7 @@ def generar_ticket(
     ancho_mm:      int  = 80,
 ) -> str:
     """
-    Genera un ticket PDF optimizado para impresora térmica.
-
-    Parámetros
-    ----------
-    venta_id      : ID de la venta en la DB
-    ticket_num    : Número visible de ticket (ej. 0042)
-    tipo_consumo  : 'local' | 'takeaway'
-    metodo_pago   : 'efectivo' | 'debito' | 'billetera'
-    items         : Lista de dicts con los ítems del pedido
-    subtotal      : Subtotal sin descuentos
-    total         : Total final a cobrar
-    nombre_local  : Nombre del establecimiento
-    direccion     : Dirección del local
-    telefono      : Teléfono del local
-    notas         : Notas adicionales del pedido
-    ancho_mm      : Ancho del papel térmico (58 o 80 mm)
+    Genera un ticket PDF optimizado para impresora térmica con logotipo centrado.
 
     Retorna
     -------
@@ -103,9 +88,25 @@ def generar_ticket(
         pdf.ln(h)
 
     # ===========================================================
-    # ENCABEZADO
+    # ENCABEZADO (CON LOGO AUTOMÁTICO)
     # ===========================================================
     _espacio(2)
+
+    # Buscar la imagen del logo en la misma carpeta del script
+    ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+    
+    if os.path.exists(ruta_logo):
+        # Adaptamos el tamaño del logo según el ancho del rollo de papel
+        ancho_logo = 44 if ancho_mm == 80 else 32
+        # Cálculo matemático exacto para centrar la imagen
+        pos_x = (ancho_mm - ancho_logo) / 2
+        
+        # Colocamos el logo en la coordenada vertical actual
+        pdf.image(ruta_logo, x=pos_x, y=pdf.get_y(), w=ancho_logo)
+        # Bajamos el cursor para dejar espacio libre debajo del logo y que no se superponga el texto
+        _espacio(ancho_logo * 0.55)
+    
+    # Nombre del local y datos comerciales
     _linea_full(nombre_local, size=13, bold=True)
     if direccion:
         _linea_full(direccion, size=8)
@@ -125,14 +126,14 @@ def generar_ticket(
     pago_labels = {'efectivo': 'Efectivo', 'debito': 'Debito/Tarjeta', 'billetera': 'Billetera Virtual'}
     _dos_col(f"Pago: {pago_labels.get(metodo_pago, metodo_pago)}", "", size=8)
     _espacio(1)
-    _sep()
+    _sn = _sep() if hasattr(pdf, '_sep') else _sep('-')
 
     # ===========================================================
     # DETALLE DE ITEMS
     # ===========================================================
     _espacio(1)
     _dos_col("PRODUCTO", "PRECIO", size=9, bold=True)
-    _sep()
+    _sep('-')
 
     for item in items:
         nombre        = _s(item.get('nombre_producto', ''))
@@ -158,7 +159,7 @@ def generar_ticket(
             pdf.cell(w_util, 3, "   + Almibar Extra (sin cargo)", ln=True, align='L')
 
     _espacio(1)
-    _sep()
+    _sep('-')
 
     # ===========================================================
     # SUBTOTAL Y TOTAL
@@ -175,9 +176,8 @@ def generar_ticket(
     # ===========================================================
     if notas and notas.strip():
         _espacio(1)
-        _sep()
+        _sep('-')
         _set_font(8, italic=True)
-        # Reemplazar caracteres no-latin1 en las notas del usuario
         nota_safe = notas.strip().encode('latin-1', errors='replace').decode('latin-1')
         max_nota  = chars - 8
         pdf.cell(w_util, 4, f"Nota: {nota_safe[:max_nota]}", ln=True, align='L')
