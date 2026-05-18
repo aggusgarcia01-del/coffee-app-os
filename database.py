@@ -20,27 +20,25 @@ def get_connection():
 
 def init_db():
     """
-    Inicializa la base de datos, limpia duplicados y carga los default de forma segura.
+    Inicializa la base de datos: crea tablas si no existen
+    e inserta datos de ejemplo por defecto.
     """
     conn = get_connection()
     c = conn.cursor()
 
-    # ── Tabla: Productos ──────────────────────────────────────
+    # ---> 💣 LÍNEA NUCLEAR: Destruye la tabla duplicada actual <---
+    c.execute('DROP TABLE IF EXISTS productos')
+
+    # ---> 🔒 SE CREA DE NUEVO: Ahora sí con la regla UNIQUE en el nombre <---
     c.execute('''
         CREATE TABLE IF NOT EXISTS productos (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre          TEXT    NOT NULL,
+            nombre          TEXT    NOT NULL UNIQUE,
             precio          REAL    NOT NULL DEFAULT 0,
             categoria       TEXT    NOT NULL DEFAULT 'cafe',
             cafe_molido_g   REAL    NOT NULL DEFAULT 18,
             activo          INTEGER NOT NULL DEFAULT 1
         )
-    ''')
-
-    # 🧹 LA ASPIRADORA: Borra todos los duplicados que se te acumularon antes
-    c.execute('''
-        DELETE FROM productos 
-        WHERE id NOT IN (SELECT MIN(id) FROM productos GROUP BY nombre)
     ''')
 
     # ── Tabla: Ventas (cabecera) ──────────────────────────────
@@ -105,7 +103,7 @@ def init_db():
         )
     ''')
 
-    # 🛡️ CARGA SEGURA: Solo inserta los productos por defecto si NO existen
+    # ── Datos iniciales: Productos por defecto ─────────────────
     productos_default = [
         ('Espresso',         1500.0, 'cafe',   18.0),
         ('Cortado',          1700.0, 'cafe',   18.0),
@@ -119,12 +117,10 @@ def init_db():
         ('Jugo de Naranja',  1500.0, 'bebida',  0.0),
     ]
     for p in productos_default:
-        c.execute('SELECT id FROM productos WHERE nombre = ?', (p[0],))
-        if not c.fetchone():
-            c.execute('''
-                INSERT INTO productos (nombre, precio, categoria, cafe_molido_g)
-                VALUES (?, ?, ?, ?)
-            ''', p)
+        c.execute('''
+            INSERT OR IGNORE INTO productos (nombre, precio, categoria, cafe_molido_g)
+            VALUES (?, ?, ?, ?)
+        ''', p)
 
     # ── Datos iniciales: Stock por defecto ────────────────────
     stock_default = [
