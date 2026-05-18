@@ -93,7 +93,7 @@ def generar_ticket(
    # ===========================================================
     # ENCABEZADO (CON LOGO AUTOMÁTICO)
     # ===========================================================
-    _espacio(2)
+    _espacio(1)
 
     # Buscar la imagen del logo en la misma carpeta del script
     ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png.png")
@@ -103,7 +103,7 @@ def generar_ticket(
         ancho_logo = 44 if ancho_mm == 80 else 32
         pos_x = (ancho_mm - ancho_logo) / 2
         pdf.image(ruta_logo, x=pos_x, y=pdf.get_y(), w=ancho_logo)
-        _espacio(ancho_logo * 0.55)
+        _espacio(ancho_logo * 1)
     else:
         # 🚨 MODO DEPURACIÓN: Si no lo encuentra, escupe el error en el propio ticket
         _set_font(7, bold=True)
@@ -111,7 +111,7 @@ def generar_ticket(
         pdf.cell(w_util, 3, "Buscando en:", ln=True, align='C')
         _set_font(6)
         pdf.cell(w_util, 3, ruta_logo[-40:], ln=True, align='C') 
-        _espacio(2)
+        _espacio(3)
         
     # Nombre del local y datos comerciales
     _linea_full(nombre_local, size=13, bold=True)
