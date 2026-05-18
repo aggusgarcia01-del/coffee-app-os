@@ -368,7 +368,7 @@ st.markdown(
     f'<div class="pc-header">'
     f'<div class="pc-logo">{ISO}'
     f'<div><div class="pc-brand">punto <b>caf\u00e9</b></div>'
-    f'<div class="pc-sub">Coffee Operating System</div></div></div>'
+    f'<div class="pc-sub">by Rochy</div></div></div>'
     f'<div class="pc-time"><span>{now.strftime("%d/%m/%Y")}</span>'
     f'<span class="pc-dot"></span><span>{now.strftime("%H:%M")}</span></div>'
     f'</div>', unsafe_allow_html=True
