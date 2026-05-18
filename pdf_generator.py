@@ -111,7 +111,6 @@ def generar_ticket(
         _espacio(3)
         
     # Nombre del local y datos comerciales
-    _linea_full(nombre_local, size=13, bold=True)
     # ===========================================================
     # INFO DEL TICKET
     # ===========================================================
