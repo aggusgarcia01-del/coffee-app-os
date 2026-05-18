@@ -15,7 +15,7 @@ import database as db
 import pdf_generator as pdf_gen
 
 st.set_page_config(
-    page_title="punto café OS",
+    page_title="punto café",
     page_icon="☕",
     layout="wide",
     initial_sidebar_state="collapsed",

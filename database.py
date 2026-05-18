@@ -20,8 +20,7 @@ def get_connection():
 
 def init_db():
     """
-    Inicializa la base de datos: crea tablas si no existen
-    e inserta datos de ejemplo por defecto.
+    Inicializa la base de datos, limpia duplicados y carga los default de forma segura.
     """
     conn = get_connection()
     c = conn.cursor()
@@ -36,6 +35,12 @@ def init_db():
             cafe_molido_g   REAL    NOT NULL DEFAULT 18,
             activo          INTEGER NOT NULL DEFAULT 1
         )
+    ''')
+
+    # 🧹 LA ASPIRADORA: Borra todos los duplicados que se te acumularon antes
+    c.execute('''
+        DELETE FROM productos 
+        WHERE id NOT IN (SELECT MIN(id) FROM productos GROUP BY nombre)
     ''')
 
     # ── Tabla: Ventas (cabecera) ──────────────────────────────
@@ -100,7 +105,7 @@ def init_db():
         )
     ''')
 
-    # ── Datos iniciales: Productos por defecto ─────────────────
+    # 🛡️ CARGA SEGURA: Solo inserta los productos por defecto si NO existen
     productos_default = [
         ('Espresso',         1500.0, 'cafe',   18.0),
         ('Cortado',          1700.0, 'cafe',   18.0),
@@ -114,10 +119,12 @@ def init_db():
         ('Jugo de Naranja',  1500.0, 'bebida',  0.0),
     ]
     for p in productos_default:
-        c.execute('''
-            INSERT OR IGNORE INTO productos (nombre, precio, categoria, cafe_molido_g)
-            VALUES (?, ?, ?, ?)
-        ''', p)
+        c.execute('SELECT id FROM productos WHERE nombre = ?', (p[0],))
+        if not c.fetchone():
+            c.execute('''
+                INSERT INTO productos (nombre, precio, categoria, cafe_molido_g)
+                VALUES (?, ?, ?, ?)
+            ''', p)
 
     # ── Datos iniciales: Stock por defecto ────────────────────
     stock_default = [
@@ -193,6 +200,14 @@ def actualizar_producto(producto_id, nombre, precio, categoria, cafe_molido_g, a
     conn.close()
 
 
+def eliminar_producto(producto_id):
+    """Elimina un producto de la base de datos."""
+    conn = get_connection()
+    conn.execute('DELETE FROM productos WHERE id = ?', (producto_id,))
+    conn.commit()
+    conn.close()
+
+
 # =============================================================
 # VENTAS
 # =============================================================
@@ -209,39 +224,24 @@ def _get_siguiente_ticket():
 
 
 def registrar_venta(tipo_consumo, metodo_pago, items, notas=""):
-    """
-    Registra una venta completa: cabecera + ítems + descuento de stock.
-
-    Parámetros
-    ----------
-    items : list[dict]
-        Cada dict debe tener:
-        producto_id, nombre_producto, cantidad, precio_unitario,
-        almibar_extra (bool), cafe_molido_g
-
-    Retorna
-    -------
-    tuple: (venta_id, ticket_num, subtotal, total)
-    """
+    """Registra una venta completa: cabecera + ítems + descuento de stock."""
     now     = datetime.now()
     fecha   = now.strftime('%Y-%m-%d')
     hora    = now.strftime('%H:%M:%S')
 
     subtotal   = sum(i['cantidad'] * i['precio_unitario'] for i in items)
-    total      = subtotal  # sin recargos adicionales
+    total      = subtotal
     ticket_num = _get_siguiente_ticket()
 
     conn = get_connection()
     c    = conn.cursor()
 
-    # Cabecera de venta
     c.execute('''
         INSERT INTO ventas (fecha, hora, tipo_consumo, metodo_pago, subtotal, total, ticket_num, notas)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (fecha, hora, tipo_consumo, metodo_pago, subtotal, total, ticket_num, notas))
     venta_id = c.lastrowid
 
-    # Ítems del pedido
     for item in items:
         subtotal_item = item['cantidad'] * item['precio_unitario']
         c.execute('''
@@ -258,7 +258,6 @@ def registrar_venta(tipo_consumo, metodo_pago, items, notas=""):
     conn.commit()
     conn.close()
 
-    # Descontar café molido del stock
     _descontar_cafe(items, venta_id, fecha, hora)
 
     return venta_id, ticket_num, subtotal, total
@@ -422,7 +421,6 @@ def get_resumen_hoy():
     total           = row['total']
     ticket_promedio = total / cantidad if cantidad > 0 else 0
 
-    # Producto más vendido del día
     mas_vendido = conn.execute('''
         SELECT dv.nombre_producto, SUM(dv.cantidad) AS total_vendido
         FROM detalle_ventas dv
@@ -433,7 +431,6 @@ def get_resumen_hoy():
         LIMIT 1
     ''', (hoy,)).fetchone()
 
-    # Almíbares extra servidos hoy
     almibar_row = conn.execute('''
         SELECT COALESCE(SUM(dv.almibar_extra * dv.cantidad), 0) AS total_almibar
         FROM detalle_ventas dv
