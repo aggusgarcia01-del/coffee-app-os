@@ -1,3 +1,4 @@
+
 # =============================================================
 # app.py — punto café OS
 # Diseño fiel al mockup: panel izquierdo + derecho, barra stock
