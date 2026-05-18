@@ -1,24 +1,12 @@
-import datetime as dt
-from datetime import timezone, timedelta
+import os
+import time
 
-# ⏱️ Engaño global al reloj de Python para clavar la hora de Argentina
-class DatetimeArgentina(dt.datetime):
-    @classmethod
-    def now(cls, tz=None):
-        if tz is None:
-            # Forzamos UTC-3 y le quitamos la etiqueta para que no rompa la base de datos
-            return dt.datetime.now(timezone(timedelta(hours=-3))).replace(tzinfo=None)
-        return dt.datetime.now(tz)
-
-class DateArgentina(dt.date):
-    @classmethod
-    def today(cls):
-        return dt.datetime.now(timezone(timedelta(hours=-3))).date()
-
-# Reemplazamos las funciones nativas por las nuestras automatizadas
-dt.datetime = DatetimeArgentina
-dt.date = DateArgentina
-
+# Forzar zona horaria de Argentina
+os.environ['TZ'] = 'America/Argentina/Buenos_Aires'
+try:
+    time.tzset()
+except AttributeError:
+    pass
 # =============================================================
 # app.py — punto café OS
 # Diseño fiel al mockup: panel izquierdo + derecho, barra stock
